@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: administration-service
+  namespace: smartqa
+  labels:
+    app: administration
+  annotations:
+        service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: LoadBalancer
+  selector:
+    app: administration
+  ports:
+    - protocol: TCP
+      name: administration-port
+      port: 9095
+      targetPort: 9095
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: administration-deployment
+  namespace: smartqa
+spec:
+  selector:
+    matchLabels:
+      app: administration
+  replicas: 1 # tells deployment to run 2 pods matching the template
+  template:
+    metadata:
+      labels:
+        app: administration
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: administration
+        image: 451480023059.dkr.ecr.us-east-2.amazonaws.com/administration:qa-latest
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 9095
+        env:
+        - name: DB_URL
+          valueFrom:
+            secretKeyRef:
+              name: secrets-ecommerce-qa
+              key: dbUrl
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: secrets-ecommerce-qa
+              key: dbUser
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: secrets-ecommerce-qa
+              key: dbPassword
+---
